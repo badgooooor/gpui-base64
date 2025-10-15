@@ -33,7 +33,7 @@ impl Base64State {
                     self.invalid_base64 = true;
                 }
             },
-            Err(e) => {
+            Err(_e) => {
                 self.invalid_base64 = true;
             },
         }
