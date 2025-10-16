@@ -5,6 +5,13 @@ use gpui_component::{
 
 use crate::base64_state::Base64State;
 
+#[derive(PartialEq, Copy, Clone)]
+enum FocusedInput {
+    None,
+    PlainText,
+    CipherText,
+}
+
 pub struct TextConvertView {
     base64_state: Base64State,
 
@@ -13,6 +20,8 @@ pub struct TextConvertView {
     cipher_text_input: Entity<InputState>,
     cipher_text: SharedString,
 
+    focused_input: FocusedInput,
+
     _subscriptions: Vec<Subscription>,
 }
 
@@ -20,9 +29,7 @@ impl TextConvertView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let base64_state = Base64State::new();
 
-        // TODO: Should this make as external state?
-        let mut is_plain_text_focused = false;
-        let mut is_cipher_text_focused = false;
+        let mut focused_input = FocusedInput::None;
 
         let plain_text_input = cx.new(|cx| InputState::new(window, cx).placeholder("Plain Text"));
         let cipher_text_input = cx.new(|cx| InputState::new(window, cx).placeholder("Cipher Text")); 
@@ -33,14 +40,13 @@ impl TextConvertView {
                 let cipher_text_input = cipher_text_input.clone();
                 move |this, _, ev: &InputEvent, window, cx| match ev {
                     InputEvent::Focus => {
-                        is_plain_text_focused = true;
-                        is_cipher_text_focused = false;
+                        focused_input = FocusedInput::PlainText;
                     }
                     InputEvent::Blur => {
-                        is_plain_text_focused = false;
+                        focused_input = FocusedInput::None;
                     }
                     InputEvent::Change => {
-                        if is_plain_text_focused {
+                        if focused_input == FocusedInput::PlainText {
                             // Update plain text input
                             let value = plain_text_input.read(cx).value();
                             this.plain_text = value.clone().into();
@@ -64,14 +70,13 @@ impl TextConvertView {
                 let plain_text_input = plain_text_input.clone();
                 move |this, _, ev: &InputEvent, window, cx| match ev {
                     InputEvent::Focus => {
-                        is_cipher_text_focused = true;
-                        is_plain_text_focused = false;
+                        focused_input = FocusedInput::CipherText;
                     }
                     InputEvent::Blur => {
-                        is_cipher_text_focused = false;
+                        focused_input = FocusedInput::None;
                     }
                     InputEvent::Change => {
-                        if is_cipher_text_focused {
+                        if focused_input == FocusedInput::CipherText {
                             // Update cipher text input
                             let value = cipher_text_input.read(cx).value();
                             this.cipher_text = value.clone().into();
@@ -98,6 +103,7 @@ impl TextConvertView {
             cipher_text: SharedString::default(),
             plain_text_input,
             cipher_text_input,
+            focused_input,
             _subscriptions
         }
     }
