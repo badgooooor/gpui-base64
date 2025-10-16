@@ -20,6 +20,10 @@ impl TextConvertView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let base64_state = Base64State::new();
 
+        // TODO: Should this make as external state?
+        let mut is_plain_text_focused = false;
+        let mut is_cipher_text_focused = false;
+
         let plain_text_input = cx.new(|cx| InputState::new(window, cx).placeholder("Plain Text"));
         let cipher_text_input = cx.new(|cx| InputState::new(window, cx).placeholder("Cipher Text")); 
 
@@ -28,32 +32,60 @@ impl TextConvertView {
                 let plain_text_input = plain_text_input.clone();
                 let cipher_text_input = cipher_text_input.clone();
                 move |this, _, ev: &InputEvent, window, cx| match ev {
+                    InputEvent::Focus => {
+                        is_plain_text_focused = true;
+                        is_cipher_text_focused = false;
+                    }
+                    InputEvent::Blur => {
+                        is_plain_text_focused = false;
+                    }
                     InputEvent::Change => {
-                        // Update plain text input
-                        let value = plain_text_input.read(cx).value();
-                        this.plain_text = value.clone().into();
+                        if is_plain_text_focused {
+                            // Update plain text input
+                            let value = plain_text_input.read(cx).value();
+                            this.plain_text = value.clone().into();
 
-                        // Update cipher text input
-                        this.base64_state.encode(&value);
-                        this.cipher_text = this.base64_state.cipher_text.clone().into();
+                            // Update cipher text input
+                            this.base64_state.encode(&value);
+                            this.cipher_text = this.base64_state.cipher_text.clone().into();
                         
-                        // Update the cipher text input directly
-                        let cipher_text_value: SharedString = this.base64_state.cipher_text.clone().into();
-                        cipher_text_input.update(cx, |state, cx| {
-                            state.set_value(cipher_text_value, window, cx);
-                        });
+                            // Update the cipher text input directly
+                            let cipher_text_value: SharedString = this.base64_state.cipher_text.clone().into();
+                            cipher_text_input.update(cx, |state, cx| {
+                                state.set_value(cipher_text_value, window, cx);
+                            });
+                        }
                     }
                     _ => {}
                 }
             }),
             cx.subscribe_in(&cipher_text_input, window, {
                 let cipher_text_input = cipher_text_input.clone();
-                // let plain_text_input = plain_text_input.clone();
-                move |this, _, ev: &InputEvent, _window, cx| match ev {
+                let plain_text_input = plain_text_input.clone();
+                move |this, _, ev: &InputEvent, window, cx| match ev {
+                    InputEvent::Focus => {
+                        is_cipher_text_focused = true;
+                        is_plain_text_focused = false;
+                    }
+                    InputEvent::Blur => {
+                        is_cipher_text_focused = false;
+                    }
                     InputEvent::Change => {
-                        // Update cipher text input
-                        let value = cipher_text_input.read(cx).value();
-                        this.cipher_text = value.clone().into();
+                        if is_cipher_text_focused {
+                            // Update cipher text input
+                            let value = cipher_text_input.read(cx).value();
+                            this.cipher_text = value.clone().into();
+
+                            // Update plain text input
+                            this.base64_state.decode(&value);
+                            this.plain_text = this.base64_state.plain_text.clone().into();
+
+                            // Update the plain text input directly
+                            let plain_text_value: SharedString = this.base64_state.plain_text.clone().into();
+                            plain_text_input.update(cx, |state, cx| {
+                                state.set_value(plain_text_value, window, cx);
+                            });
+                        }
                     }
                     _ => {}
                 }
