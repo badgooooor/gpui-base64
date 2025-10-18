@@ -31,8 +31,22 @@ impl TextConvertView {
 
         let mut focused_input = FocusedInput::None;
 
-        let plain_text_input = cx.new(|cx| InputState::new(window, cx).placeholder("Plain Text"));
-        let cipher_text_input = cx.new(|cx| InputState::new(window, cx).placeholder("Cipher Text")); 
+        let plain_text_input = cx.new(|cx| 
+            InputState::new(window, cx)
+                .code_editor("plaintext")
+                .placeholder("Plain Text")
+                .line_number(true)
+                .rows(10)
+                .searchable(true)
+        );
+        let cipher_text_input = cx.new(|cx| 
+            InputState::new(window, cx)
+                .code_editor("ciphertext")
+                .placeholder("Cipher Text")
+                .line_number(true)
+                .rows(10)
+                .searchable(true)
+        );
 
         let _subscriptions = vec![
             cx.subscribe_in(&plain_text_input, window, {
@@ -115,97 +129,37 @@ impl Render for TextConvertView {
             .flex()
             .flex_col()
             .size_full()
+            .gap_0()
             .bg(rgb(0xf5f5f5))
-            .p_4()
-            .gap_4()
-            .child(
-                // Header
-                div()
-                    .flex()
-                    .justify_center()
-                    .mb_2()
-                    .child(
-                        div()
-                            .text_xl()
-                            .font_weight(FontWeight::BOLD)
-                            .text_color(rgb(0x333333))
-                            .child("Base64 Text Converter")
-                    )
-            )
             .child(
                 // Main content container
                 div()
                     .flex()
                     .flex_col()
-                    .gap_8()
                     .size_full()
-                    .px_8()
                     .child(
                         div()
                             .flex()
                             .flex_col()
-                            .gap_4()
                             .size_full()
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_weight(FontWeight::MEDIUM)
-                                    .text_color(rgb(0x444444))
-                                    .mb_2()
-                                    .child("Plain Text")
-                            )
                             .child(
                                 TextInput::new(&self.plain_text_input)
                                     .size_full()
                                     .min_h(px(200.0))
-                            )
-                            .child(
-                                div()
-                                    .text_sm()
-                                    .text_color(rgb(0x888888))
-                                    .mt_2()
-                                    .child(self.plain_text.clone())
+                                    .rounded_none()
                             )
                     )
                     .child(
                         div()
                             .flex()
                             .flex_col()
-                            .gap_4()
                             .size_full()
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_weight(FontWeight::MEDIUM)
-                                    .text_color(rgb(0x444444))
-                                    .mb_2()
-                                    .child("Base64 Encoded")
-                            )
                             .child(
                                 TextInput::new(&self.cipher_text_input)
                                     .size_full()
                                     .min_h(px(200.0))
+                                    .rounded_none()
                             )
-                            .child(
-                                div()
-                                    .text_sm()
-                                    .text_color(rgb(0x888888))
-                                    .mt_2()
-                                    .child(self.cipher_text.clone())
-                            )
-                    )
-            )
-            .child(
-                // Example section
-                div()
-                    .flex()
-                    .justify_center()
-                    .mt_4()
-                    .child(
-                        div()
-                            .text_sm()
-                            .text_color(rgb(0x666666))
-                            .child("Example: 'hello' ↔ 'aGVsbG8='")
                     )
             )
     }
