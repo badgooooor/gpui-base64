@@ -16,6 +16,10 @@ fn main() {
 
         let window_options = WindowOptions {
             window_bounds: Some(WindowBounds::centered(size(px(1200.), px(800.)), cx)),
+            titlebar: Some(TitlebarOptions {
+                title: Some("Base64 Encoder/Decoder".into()),
+                ..Default::default()
+            }),
             ..Default::default()
         };
 
