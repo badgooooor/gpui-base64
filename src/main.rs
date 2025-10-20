@@ -1,5 +1,6 @@
 use gpui::*;
 
+mod actions;
 mod base64_state;
 mod components;
 
@@ -8,11 +9,15 @@ use gpui_component::{
 };
 use components::text_convert_view::TextConvertView;
 
+use crate::actions::bind_app_actions;
+
 fn main() {
     let app = Application::new();
 
     app.run(|cx| {
         gpui_component::init(cx);
+
+        bind_app_actions(cx);
 
         let window_options = WindowOptions {
             window_bounds: Some(WindowBounds::centered(size(px(1200.), px(800.)), cx)),
