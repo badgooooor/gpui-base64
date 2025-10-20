@@ -3,7 +3,7 @@ use gpui_component::{
     input::{InputEvent, InputState, TextInput}
 };
 
-use crate::base64_state::Base64State;
+use crate::{actions::app_actions::{FocusCipherTextInput, FocusPlainTextInput, Reset}, base64_state::Base64State};
 
 #[derive(PartialEq, Copy, Clone)]
 enum FocusedInput {
@@ -20,9 +20,11 @@ pub struct TextConvertView {
     cipher_text_input: Entity<InputState>,
     cipher_text: SharedString,
 
-    focused_input: FocusedInput,
-
     _subscriptions: Vec<Subscription>,
+    
+    plain_text_input_focus_handle: FocusHandle,
+    cipher_text_input_focus_handle: FocusHandle,
+    focus_handle: FocusHandle,
 }
 
 impl TextConvertView {
@@ -117,15 +119,56 @@ impl TextConvertView {
             cipher_text: SharedString::default(),
             plain_text_input,
             cipher_text_input,
-            focused_input,
-            _subscriptions
+            _subscriptions,
+            plain_text_input_focus_handle: cx.focus_handle(),
+            cipher_text_input_focus_handle: cx.focus_handle(),
+            focus_handle: cx.focus_handle(),
         }
+    }
+
+    fn focus_plain_text_input(&mut self, _: &FocusPlainTextInput, window: &mut Window, cx: &mut Context<Self>) {        
+        self.plain_text_input.update(cx, |input_state, cx| {
+            input_state.focus(window, cx);
+        });
+        cx.notify();
+    }
+
+    fn focus_cipher_text_input(&mut self, _: &FocusCipherTextInput, window: &mut Window, cx: &mut Context<Self>) {
+        self.cipher_text_input.update(cx, |input_state, cx| {
+            input_state.focus(window, cx);
+        });
+        cx.notify();
+    }
+
+    fn reset(&mut self, _: &Reset, window: &mut Window, cx: &mut Context<Self>) {
+        self.base64_state.reset();
+        self.plain_text = SharedString::default();
+        self.cipher_text = SharedString::default();
+
+        self.plain_text_input.update(cx, |input_state, cx| {
+            input_state.set_value(SharedString::default(), window, cx);
+        });
+        self.cipher_text_input.update(cx, |input_state, cx| {
+            input_state.set_value(SharedString::default(), window, cx);
+        });
+        cx.notify();
+    }
+}
+
+impl Focusable for TextConvertView {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 
 impl Render for TextConvertView {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
+            .track_focus(&self.focus_handle)
+            .key_context("TextConvertView")
+            .on_action(cx.listener(Self::focus_plain_text_input))
+            .on_action(cx.listener(Self::focus_cipher_text_input))
+            .on_action(cx.listener(Self::reset))
             .flex()
             .flex_col()
             .size_full()
@@ -142,6 +185,7 @@ impl Render for TextConvertView {
                             .flex()
                             .flex_col()
                             .size_full()
+                            .track_focus(&self.plain_text_input_focus_handle)
                             .child(
                                 TextInput::new(&self.plain_text_input)
                                     .size_full()
@@ -154,6 +198,7 @@ impl Render for TextConvertView {
                             .flex()
                             .flex_col()
                             .size_full()
+                            .track_focus(&self.cipher_text_input_focus_handle)
                             .child(
                                 TextInput::new(&self.cipher_text_input)
                                     .size_full()
