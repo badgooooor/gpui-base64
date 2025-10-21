@@ -17,5 +17,3 @@ pub fn bind_app_actions(cx: &mut App) {
         KeyBinding::new("cmd-r", app_actions::Reset, Some("TextConvertView")),
     ]);
 }
-
-use app_actions::*;
