@@ -4,6 +4,7 @@ use gpui_component::{
 };
 
 use crate::{actions::app_actions::{FocusCipherTextInput, FocusPlainTextInput, Reset}, base64_state::Base64State};
+use super::state_tab::StateTab;
 
 #[derive(PartialEq, Copy, Clone)]
 enum FocusedInput {
@@ -20,6 +21,8 @@ pub struct TextConvertView {
     cipher_text_input: Entity<InputState>,
     cipher_text: SharedString,
 
+    state_tab: StateTab,
+
     _subscriptions: Vec<Subscription>,
     
     plain_text_input_focus_handle: FocusHandle,
@@ -29,8 +32,11 @@ pub struct TextConvertView {
 
 impl TextConvertView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let base64_state = Base64State::new();
+        let mut state_tab = StateTab::new();
+        state_tab.set_info_text("Ready to encode/decode base64 text".to_string());
 
+
+        let base64_state = Base64State::new();
         let mut focused_input = FocusedInput::None;
 
         let plain_text_input = cx.new(|cx| 
@@ -76,6 +82,8 @@ impl TextConvertView {
                             cipher_text_input.update(cx, |state, cx| {
                                 state.set_value(cipher_text_value, window, cx);
                             });
+
+                            this.update_state_tab();
                         }
                     }
                     _ => {}
@@ -106,6 +114,8 @@ impl TextConvertView {
                             plain_text_input.update(cx, |state, cx| {
                                 state.set_value(plain_text_value, window, cx);
                             });
+
+                            this.update_state_tab();
                         }
                     }
                     _ => {}
@@ -119,6 +129,7 @@ impl TextConvertView {
             cipher_text: SharedString::default(),
             plain_text_input,
             cipher_text_input,
+            state_tab,
             _subscriptions,
             plain_text_input_focus_handle: cx.focus_handle(),
             cipher_text_input_focus_handle: cx.focus_handle(),
@@ -153,6 +164,14 @@ impl TextConvertView {
         });
         cx.notify();
     }
+
+    fn update_state_tab(&mut self) {
+        if self.base64_state.invalid_base64 {
+            self.state_tab.set_error_text("Invalid base64 text".to_string());
+        } else {
+            self.state_tab.set_info_text("Ready to encode/decode base64 text".to_string());
+        }
+    }
 }
 
 impl Focusable for TextConvertView {
@@ -162,7 +181,7 @@ impl Focusable for TextConvertView {
 }
 
 impl Render for TextConvertView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .track_focus(&self.focus_handle)
             .key_context("TextConvertView")
@@ -206,6 +225,9 @@ impl Render for TextConvertView {
                                     .rounded_none()
                             )
                     )
+            )
+            .child(
+                self.state_tab.clone().render(window, cx)
             )
     }
 }
