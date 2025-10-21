@@ -19,6 +19,7 @@ impl Base64State {
     pub fn encode(&mut self, plain_text: &str) {
         self.plain_text = plain_text.to_string();
         self.cipher_text = general_purpose::STANDARD.encode(plain_text);
+        self.invalid_base64 = false;
     }
 
     pub fn decode(&mut self, cipher_text: &str) {
